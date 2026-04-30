@@ -30,11 +30,11 @@ initial_spot = st.sidebar.number_input(
 
 annual_drift = st.sidebar.slider(
     _t("予想年間変動率 (ドリフト %)", "预期年化涨跌幅 (%)"), 
-    min_value=-20.0, max_value=20.0, value=0.0, step=1.0) / 100
+    min_value=-50.0, max_value=50.0, value=0.0, step=1.0) / 100
 
 volatility = st.sidebar.slider(
     _t("市場の年間ボラティリティ (%)", "市场年化波动率 (%)"), 
-    min_value=0.0, max_value=30.0, value=10.0, step=1.0) / 100
+    min_value=0.0, max_value=1000.0, value=10.0, step=1.0) / 100
 
 st.sidebar.markdown("---")
 st.sidebar.subheader(_t("先物為替レート・パラメータ（金利差）", "远期汇率参数（利差影响）"))
