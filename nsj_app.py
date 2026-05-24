@@ -23,8 +23,8 @@ PARTICIPANT_FIXED_DATE = date(2021, 5, 21)
 VENUE_31_DAYS_BEFORE = date(2021, 5, 19)
 VENUE_30_DAYS_BEFORE = date(2021, 5, 20)
 
-# Case里没有明确讲师事前会议日期，这里暂定为5月31日
-PRE_MEETING_DATE = date(2021, 5, 31)
+# Case里没有明确讲师事前会议日期，这里暂定为1月31日
+PRE_MEETING_DATE = date(2021, 1, 31)
 
 LUNCH_FREE_CANCEL_LIMIT = date(2021, 6, 16)
 COFFEE_FREE_CANCEL_LIMIT = date(2021, 6, 18)
