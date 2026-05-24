@@ -10,7 +10,7 @@ import math
 
 EVENT_DATE = date(2021, 6, 19)
 
-WEB_AD_CONTRACT = date(2021, 2, 12)
+WEB_AD_CONTRACT = date(2021, 2, 12）
 WEB_AD_START = date(2021, 3, 12)
 
 PAMPHLET_PRINT_DATE = date(2021, 2, 26)
