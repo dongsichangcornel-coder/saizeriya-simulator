@@ -656,7 +656,7 @@ date_df = pd.DataFrame({
     ]
 })
 
-st.dataframe(date_df, use_container_width=True)VENUE_DEPOSIT = VENUE_TOTAL * 0.30
+st.dataframe(date_df, use_container_width=True)
 
 LECTURER_TOTAL = 500_000
 LECTURER_CANCEL_AFTER_MEETING = 250_000
