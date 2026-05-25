@@ -146,30 +146,28 @@ def calculate_revenue(registered_people, student_cancel_people, final_people, fe
 # 5. 咖啡费用计算 / Coffee Cost
 # =========================================================
 
-def calculate_coffee_cost(final_people):
-    coffee_people = final_people + 1 + 4  # 受讲生 + 讲师1 + 员工4
-    required_cups = coffee_people
-    order_units = math.ceil(required_cups / 10)
-    order_cups = order_units * 10
+def calculate_coffee_cost(selected_coffee_cups):
+    order_cups = selected_coffee_cups
+    order_units = order_cups // 10
     coffee_cost = order_units * COFFEE_UNIT_PER_10_CUPS
 
     process = L(
-        f"需要杯数 = 实际参加人数{final_people}+讲师1+员工4 = {required_cups}杯；"
-        f"只能10杯单位订购，所以订购 {order_cups}杯；"
+        f"选择咖啡杯数 = {order_cups}杯；"
+        f"咖啡只能10杯单位订购；"
         f"{order_units}单位 × {yen(COFFEE_UNIT_PER_10_CUPS)} = {yen(coffee_cost)}",
-        f"必要杯数 = 実際受講者{final_people}+講師1+スタッフ4 = {required_cups}杯；"
-        f"10杯単位でしか注文できないため、注文数は {order_cups}杯；"
+        f"選択したコーヒー杯数 = {order_cups}杯；"
+        f"コーヒーは10杯単位で注文；"
         f"{order_units}単位 × {yen(COFFEE_UNIT_PER_10_CUPS)} = {yen(coffee_cost)}"
     )
 
-    return coffee_cost, required_cups, order_cups, process
+    return coffee_cost, order_cups, process
 
 
 # =========================================================
 # 6. 成本组件计算 / Cost Components
 # =========================================================
 
-def calculate_component_rows(final_people, cancel_date=None):
+def calculate_component_rows(final_people, selected_coffee_cups, cancel_date=None):
     normal_rows = []
     cancel_rows = []
     avoidable_rows = []
@@ -452,7 +450,7 @@ def calculate_component_rows(final_people, cancel_date=None):
     )
 
     # 8. 咖啡服务 / コーヒーサービス
-    normal_coffee, required_cups, order_cups, normal_coffee_process = calculate_coffee_cost(final_people)
+    normal_coffee, order_cups, normal_coffee_process = calculate_coffee_cost(selected_coffee_cups)
 
     if cancel_date is not None:
         if cancel_date <= COFFEE_FREE_CANCEL_LIMIT:
@@ -464,8 +462,8 @@ def calculate_component_rows(final_people, cancel_date=None):
         else:
             cancel_coffee = normal_coffee
             cancel_coffee_process = L(
-                f"超过免费取消期限，需要杯数 {required_cups}杯，10杯单位订购为 {order_cups}杯，费用 = {yen(cancel_coffee)}",
-                f"無料キャンセル期限後。必要杯数 {required_cups}杯、10杯単位のため注文数は {order_cups}杯、費用 = {yen(cancel_coffee)}"
+                f"超过免费取消期限，选择咖啡杯数为 {order_cups}杯，费用 = {yen(cancel_coffee)}",
+                f"無料キャンセル期限後。選択したコーヒー杯数は {order_cups}杯、費用 = {yen(cancel_coffee)}"
             )
     else:
         cancel_coffee = None
@@ -526,6 +524,12 @@ with st.sidebar:
         index=7
     )
 
+    selected_coffee_cups = st.select_slider(
+        L("咖啡杯数", "コーヒー杯数"),
+        options=list(range(0, 101, 10)),
+        value=80
+    )
+
     cancel_choice = st.radio(
         L("NSJ是否取消举办？", "NSJ側が開催をキャンセルするか？"),
         [L("不取消", "キャンセルしない"), L("取消", "キャンセルする")],
@@ -583,9 +587,7 @@ with st.sidebar:
         cancel_date = None
         timing_choice = None
 
-    # 重点修正：
-    # 如果取消日早于募集开始日，则募集期内学生取消人数只能是0。
-    # 不能用 slider(min=0, max=0)，否则 Streamlit 会报错。
+    # 如果取消日早于募集开始日，则募集期内学生取消人数只能是0
     if nsj_cancel and cancel_date < RECRUIT_START:
         student_cancel_people = 0
         st.info(L(
@@ -608,6 +610,7 @@ with st.sidebar:
     st.write(L(f"报名人数：{registered_people} 人", f"申込人数：{registered_people} 人"))
     st.write(L(f"募集期内取消：{student_cancel_people} 人", f"募集期間中キャンセル：{student_cancel_people} 人"))
     st.write(L(f"实际参加人数：{final_people} 人", f"実際受講者数：{final_people} 人"))
+    st.write(L(f"咖啡杯数：{selected_coffee_cups} 杯", f"コーヒー杯数：{selected_coffee_cups} 杯"))
 
 
 # =========================================================
@@ -632,6 +635,7 @@ cancel_revenue, cancel_tuition_revenue, cancel_penalty_revenue, cancel_revenue_p
 
 normal_df, normal_total, cancel_df, cancel_total, avoidable_df, avoidable_total = calculate_component_rows(
     final_people,
+    selected_coffee_cups,
     cancel_date=cancel_date if nsj_cancel else None
 )
 
@@ -765,6 +769,10 @@ with st.expander(L("查看正常举办时的计算过程", "開催時の計算�
     st.write(L(
         f"实际参加人数 = {registered_people} - {student_cancel_people} = {final_people} 人",
         f"実際受講者数 = {registered_people} - {student_cancel_people} = {final_people} 人"
+    ))
+    st.write(L(
+        f"咖啡杯数 = {selected_coffee_cups} 杯",
+        f"コーヒー杯数 = {selected_coffee_cups} 杯"
     ))
     st.write(holding_revenue_process)
 
