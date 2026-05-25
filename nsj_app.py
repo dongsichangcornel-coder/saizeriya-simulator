@@ -16,19 +16,20 @@ TIMING_B = date(2021, 3, 19)   # 3ヵ月前：2021年3月第3金曜日
 TIMING_C = date(2021, 5, 21)   # 1ヵ月前：2021年5月第3金曜日
 TIMING_D = date(2021, 6, 18)   # 前日：2021年6月第3金曜日
 
-# 根据题目重新设定 / 問題文に合わせて再設定
-VENUE_RESERVATION_DATE = TIMING_A     # 会场预约已完成 / 会場予約済み
-PRE_MEETING_DATE = TIMING_A           # 大泽教授MTG已完成 / 大澤氏とのMTG済み
-WEB_AD_CONTRACT = TIMING_A            # 广告契约已完成 / 広告契約済み
+# 根据题目重新设定 / 問題文に合わせた設定
+VENUE_RESERVATION_DATE = TIMING_A       # 会场预约已完成
+PRE_MEETING_DATE = TIMING_A             # 大泽教授MTG已完成
+WEB_AD_CONTRACT = TIMING_A              # 广告契约已完成
+LECTURER_ADVANCE_PAYMENT_DATE = date(2020, 12, 31)  # 前金支付日，仅作为现金流说明
 
 # 其他日期 / その他の日程
-WEB_AD_START = date(2021, 3, 12)      # Web广告开始日：按case设定
+WEB_AD_START = date(2021, 3, 12)        # Web广告开始日
 PAMPHLET_PRINT_DATE = date(2021, 2, 26)
-PAMPHLET_SEND_DATE = TIMING_B         # 3ヵ月前にはパンフレット郵送済み
+PAMPHLET_SEND_DATE = TIMING_B           # 3ヵ月前にはパンフレット郵送済み
 RECRUIT_START = date(2021, 4, 26)
 RECRUIT_END = date(2021, 5, 14)
-PARTICIPANT_FIXED_DATE = TIMING_C     # 5月第3金曜日に人数确定
-VENUE_FULL_PAYMENT_DATE = TIMING_C    # 1ヵ月前には会場費全額支払い済み
+PARTICIPANT_FIXED_DATE = TIMING_C       # 5月第3金曜日に人数确定
+VENUE_FULL_PAYMENT_DATE = TIMING_C      # 1ヵ月前には会場費全額支払い済み
 
 LUNCH_FREE_CANCEL_LIMIT = date(2021, 6, 16)   # 举办3日前
 COFFEE_FREE_CANCEL_LIMIT = date(2021, 6, 18)  # 举办前日
@@ -43,6 +44,7 @@ VENUE_DEPOSIT = VENUE_TOTAL * 0.30
 
 LECTURER_TOTAL = 500_000
 LECTURER_CANCEL_AFTER_MEETING = 250_000
+LECTURER_ADVANCE = 100_000
 
 STAFF_MONTHLY_SALARY = 420_000
 WORKING_DAYS_PER_MONTH = 21
@@ -250,8 +252,10 @@ def calculate_component_rows(final_people, cancel_date=None):
         else:
             cancel_lecturer = LECTURER_CANCEL_AFTER_MEETING
             cancel_lecturer_process = L(
-                f"大泽教授线上MTG后由NSJ取消，需承担讲师费半额 = {yen(cancel_lecturer)}",
-                f"大澤氏とのMTG後にNSJ側都合でキャンセルするため、講師料半額 = {yen(cancel_lecturer)}"
+                f"大泽教授线上MTG后由NSJ取消，需承担讲师费半额 = {yen(cancel_lecturer)}。"
+                f"前金支付日为2020-12-31，但MTG完成日已经使取消义务发生，支付日只影响现金流。",
+                f"大澤氏とのMTG後にNSJ側都合でキャンセルするため、講師料半額 = {yen(cancel_lecturer)}。"
+                f"前金支払日は2020-12-31だが、MTG完了日にキャンセル時の支払義務が発生しており、支払日はキャッシュフローにのみ影響する。"
             )
     else:
         cancel_lecturer = None
@@ -547,7 +551,7 @@ with st.sidebar:
             "（d）前日：2021-06-18",
             "（d）開催前日：2021-06-18"
         ),
-        "custom": L("自定义日期", "日付を自由選択")
+        "custom": L("自定义日期：2020年12月18日〜2021年6月19日", "日付を自由選択：2020年12月18日〜2021年6月19日")
     }
 
     timing_dates = {
@@ -568,7 +572,7 @@ with st.sidebar:
         if timing_choice == "custom":
             cancel_date = st.date_input(
                 L("NSJ取消日期", "NSJキャンセル日"),
-                value=TIMING_C,
+                value=TIMING_A,
                 min_value=TIMING_A,
                 max_value=EVENT_DATE
             )
@@ -579,19 +583,23 @@ with st.sidebar:
         cancel_date = None
         timing_choice = None
 
-    # 如果NSJ在募集开始前取消，就不可能出现募集期内学生取消
+    # 重点修正：
+    # 如果取消日早于募集开始日，则募集期内学生取消人数只能是0。
+    # 不能用 slider(min=0, max=0)，否则 Streamlit 会报错。
     if nsj_cancel and cancel_date < RECRUIT_START:
-        max_student_cancel = 0
+        student_cancel_people = 0
+        st.info(L(
+            "该取消时点早于募集开始日，因此募集期内取消报名人数固定为 0 人。",
+            "このキャンセル時点は募集開始前のため、募集期間中の受講生側キャンセル人数は 0 人に固定されます。"
+        ))
     else:
-        max_student_cancel = registered_people
-
-    student_cancel_people = st.slider(
-        L("募集期内取消报名人数", "募集期間中の受講生側キャンセル人数"),
-        min_value=0,
-        max_value=max_student_cancel,
-        value=0,
-        step=1
-    )
+        student_cancel_people = st.slider(
+            L("募集期内取消报名人数", "募集期間中の受講生側キャンセル人数"),
+            min_value=0,
+            max_value=registered_people,
+            value=0,
+            step=1
+        )
 
     final_people = registered_people - student_cancel_people
 
@@ -827,6 +835,7 @@ st.subheader(L("六、重要日期", "六、重要日程"))
 date_df = pd.DataFrame({
     L("日期", "日付"): [
         TIMING_A,
+        LECTURER_ADVANCE_PAYMENT_DATE,
         WEB_AD_START,
         PAMPHLET_PRINT_DATE,
         TIMING_B,
@@ -839,6 +848,7 @@ date_df = pd.DataFrame({
     ],
     L("含义", "意味"): [
         L("题目（a）：半年前；会场预约、大泽氏MTG、广告契约均已完成", "問題（a）：半年前；会場予約・大澤氏MTG・広告契約はすべて済み"),
+        L("大泽教授前金支付日；只影响现金流，不改变回避可能原价判断", "大澤氏への前金支払日；キャッシュフローにのみ影響し、回避可能原価の判断は変えない"),
         L("Web广告开始", "Web広告開始"),
         L("宣传册印刷完成", "パンフレット印刷完了"),
         L("题目（b）：3个月前；宣传册已邮送", "問題（b）：3ヵ月前；パンフレットは郵送済み"),
